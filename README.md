@@ -55,7 +55,9 @@ If you use or build upon this code, please cite the corresponding thesis:
 
 ## Acknowledgements
 
-Special thanks to the Cal Poly Statistics Department and CSSE Department and all contributors to this research effort. Satellite image processing was enabled by pretrained ResNet architectures; weather data was obtained via Open-Meteo’s public API.
+Special thanks to the Cal Poly Statistics Department and CSSE Department and all contributors to this research effort. Satellite image was obtained from Russ White from Cal Poly State University’s Robert E. Kennedy Library, and processing the images was enabled by pretrained ResNet architectures. Weather data was obtained via Open-Meteo’s public API.
+
+Also, a big thank you to Dr. Bodwin! 
 
 ---
 
