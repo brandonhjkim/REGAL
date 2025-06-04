@@ -11,7 +11,7 @@ This repository contains the core implementation of **REGAL**, a novel explainab
 
 ---
 
-## 🧠 Key Components
+## Key Components
 
 ### `data_processing/`
 Scripts responsible for:
@@ -37,7 +37,7 @@ All functions are modular and designed for interpretability pipelines. This file
 
 ---
 
-## 🛑 Limitations
+## Limitations
 
 - **No public dataset**: All data is protected under an NDA and cannot be shared.
 - **Not immediately executable**: This repository is intended as a code showcase, not a plug-and-play tool.
@@ -53,13 +53,13 @@ If you use or build upon this code, please cite the corresponding thesis:
 
 ---
 
-## 🤝 Acknowledgements
+## Acknowledgements
 
 Special thanks to the Cal Poly Statistics Department and CSSE Department and all contributors to this research effort. Satellite image processing was enabled by pretrained ResNet architectures; weather data was obtained via Open-Meteo’s public API.
 
 ---
 
-## 📬 Contact
+## Contact
 
 For academic inquiries or collaborations, feel free to reach out via email or [LinkedIn](https://www.linkedin.com/in/brandon-kim1/).
 
