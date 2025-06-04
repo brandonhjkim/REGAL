@@ -45,7 +45,7 @@ All functions are modular and designed for interpretability pipelines. This file
 
 ---
 
-## 📜 Citation
+## Citation
 
 If you use or build upon this code, please cite the corresponding thesis:
 
