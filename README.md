@@ -1,4 +1,4 @@
-# REGAL: Regionally Grounded Attribution through Localized Sampling
+# REGAL: Rules-based Explanations for Generated neighborhoods Around Localized cases
 
 This repository contains the core implementation of **REGAL**, a novel explainable AI framework for interpreting multimodal deep learning models. REGAL is designed to generate regionally faithful explanations by integrating realistic synthetic sampling (via CT-GAN), feature-level attribution, and image-level saliency using Grad-CAM. It was developed as part of my culminating master's thesis project to support explainability in search and rescue (SAR) outcome prediction.
 
