@@ -9,8 +9,12 @@ from scipy.spatial.distance import cdist
 import random 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import cv2
 from torchvision import models, transforms
 import numpy as np 
+import matplotlib.pyplot as plt
+from PIL import Image
 
 # read in data
 df = pd.read_csv('df_with_preds_and_embeddings.csv') # processed dataset with preds and embeddings
@@ -93,8 +97,8 @@ def generate_neighborhood(instance, success_bool, neighborhood_size, decision_bo
     y = np.array() 
 
     while len(neighborhood) < neighborhood_size:  
+        # randomly selecting conditions for 1 perturbation
         sampled_keys = random.sample(list(instance_dict.keys()), p)
-
         condition = Condition(
             num_rows=1,
             column_values={k: instance_dict[k] for k in sampled_keys}
@@ -149,6 +153,7 @@ def feature_interplay_and_importance(instance, neighborhood, y, min_impurity_dec
 
     for i in range(X.shape[1]):
         feature_values = X[:, i]
+        # considering thresholds as all unique values 
         thresholds = np.unique(feature_values)
         best_reduction = -np.inf
 
@@ -162,12 +167,13 @@ def feature_interplay_and_importance(instance, neighborhood, y, min_impurity_dec
             y_left = y[left_mask]
             y_right = y[right_mask]
 
+            # computing IR 
             nL, nR = len(y_left), len(y_right)
             varL, varR = np.var(y_left), np.var(y_right)
-
             weighted_child_var = (nL / n) * varL + (nR / n) * varR
             reduction = parent_variance - weighted_child_var
 
+            # only considers best split of a feature (naive approach) 
             if reduction > best_reduction:
                 best_reduction = reduction
 
@@ -178,14 +184,90 @@ def feature_interplay_and_importance(instance, neighborhood, y, min_impurity_dec
 
 # Grad-CAM
 
+def gradcam_from_embedding(embed_index, image_tensor):
+    activations = []
+    gradients = []
 
+    # hooks 
+    def forward_hook(module, input, output):
+        activations.append(output)
+    def backward_hook(module, grad_input, grad_output):
+        gradients.append(grad_output[0])
 
+    # register hooks on the last resnet conv layer (layer4)
+    hook_layer = succsarnet.cnn_backbone[-1]
+    f_handle = hook_layer.register_forward_hook(forward_hook)
+    b_handle = hook_layer.register_backward_hook(backward_hook)
 
+    # ensure image is on same device and requires grad
+    image_tensor = image_tensor.to(next(succsarnet.parameters()).device).requires_grad_(True)
 
+    # forward pass through cnn + embedding
+    img_features = succsarnet.cnn_backbone(image_tensor).reshape(1, -1)
+    img_embeds = succsarnet.img_embedding(img_features)
 
-            
+    # define target
+    target = img_embeds[0, embed_index]
 
-        
+    # backward pass
+    succsarnet.zero_grad()
+    target.backward()
+
+    # activations and gradients from hooked layer
+    acts = activations[0] 
+    grads = gradients[0]   
+
+    # grad-cam weights
+    weights = grads.mean(dim=(2, 3), keepdim=True)
+    grad_cam = F.relu((weights * acts).sum(dim=1, keepdim=True))
+
+    # normalize
+    heatmap = grad_cam.squeeze().detach().cpu().numpy()
+    heatmap = (heatmap - heatmap.min()) / (heatmap.max() - heatmap.min() + 1e-8)
+
+    # remove hooks 
+    f_handle.remove()
+    b_handle.remove()
+
+    return heatmap
+
+def visualize_gradcam_overlay(image_tensor, heatmap, alpha=0.5,):
+    # convert to rgb 
+    img = image_tensor.squeeze().detach().cpu().numpy()  
+    img = np.transpose(img, (1, 2, 0)) 
+
+    # resize heatmap to match image
+    heatmap_resized = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+    heatmap_color = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    heatmap_color = cv2.cvtColor(heatmap_color, cv2.COLOR_BGR2RGB)
+
+    # blend the heatmap and the image
+    overlay = np.uint8(alpha * heatmap_color + (1 - alpha) * img)
+
+    # visualize 
+    plt.imshow(overlay)
+    plt.title("Grad-CAM Overlay")
+    plt.axis('off')
+    plt.show()
+
+# example usage of visualizing grad_cam 
+
+# preprocessing pipeline 
+preprocess = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),  
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],  
+                             std=[0.229, 0.224, 0.225])   
+    ])  
+
+# load in image 
+image = Image.open('MRALabeled2178.tif')
+# preprocess 
+image_tensor = preprocess(image.convert('RGB')).unsqueeze(0).to(device)
+# heatmap creation
+heatmap = gradcam_from_embedding(embed_index=91, image_tensor=image_tensor)
+# visualize
+visualize_gradcam_overlay(image_tensor=image_tensor, heatmap=heatmap)
 
 
         
